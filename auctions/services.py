@@ -9,7 +9,7 @@ def close_auction(auction: AuctionListing) -> AuctionListing:
     and mark it as COMPLETED. Idempotent -- calling this on an
     already-completed auction is a no-op.
     """
-    if auction.status != Status.ACTIVE:
+    if auction.status != Status.ACTIVE.value:
         return auction
 
     top_bid = auction.bids.order_by("-amount", "created_at").first()
@@ -17,7 +17,7 @@ def close_auction(auction: AuctionListing) -> AuctionListing:
         auction.winner = top_bid.bidder
         auction.current_price = top_bid.amount
 
-    auction.status = Status.COMPLETED
+    auction.status = Status.COMPLETED.value
     auction.save(update_fields=["status", "winner", "current_price", "updated_at"])
     return auction
 
@@ -32,7 +32,7 @@ def close_expired_auctions(queryset=None) -> int:
     command (`close_expired_auctions`) for use with cron/Celery beat.
     """
     qs = queryset if queryset is not None else AuctionListing.objects.all()
-    expired = qs.filter(status=Status.ACTIVE, end_time__lte=timezone.now())
+    expired = qs.filter(status=Status.ACTIVE.value, end_time__lte=timezone.now())
     count = 0
     for auction in expired:
         close_auction(auction)
@@ -42,7 +42,7 @@ def close_expired_auctions(queryset=None) -> int:
 
 def ensure_auction_state(auction: AuctionListing) -> AuctionListing:
     """Lazily close a single auction if it has expired, then return it fresh."""
-    if auction.status == Status.ACTIVE and auction.end_time <= timezone.now():
+    if auction.status == Status.ACTIVE.value and auction.end_time <= timezone.now():
         close_auction(auction)
         auction.refresh_from_db()
     return auction

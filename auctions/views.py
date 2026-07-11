@@ -90,7 +90,7 @@ class AuctionDetailView(APIView):
     def _update(self, request, pk, partial):
         auction = self.get_object(pk)
 
-        if auction.status != Status.ACTIVE:
+        if auction.status != Status.ACTIVE.value:
             return Response(
                 {"detail": "Only active auctions can be edited."},
                 status=status.HTTP_400_BAD_REQUEST,
